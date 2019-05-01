@@ -15,15 +15,15 @@ exports.inquirerTexts = {
 };
 exports.inquirerChoices = {
     untranslatedLabelMarker: [
-        { name: '[untranslated label]', format: key => `[${key}]` },
-        { name: '{untranslated label}', format: key => `{${key}}` },
-        { name: '*untranslated label*', format: key => `*${key}*` },
-        { name: '<untranslated label>', format: key => `<${key}>` },
-        { name: '#untranslated label#', format: key => `#${key}#` }
+        { name: '[untranslated label]', format: (entry) => `[${entry.key}]` },
+        { name: '{untranslated label}', format: (entry) => `{${entry.key}}` },
+        { name: '*untranslated label*', format: (entry) => `*${entry.key}*` },
+        { name: '<untranslated label>', format: (entry) => `<${entry.key}>` },
+        { name: '#untranslated label#', format: (entry) => `#${entry.key}#` }
     ],
     translatedLabelAction: [
-        { name: 'show translation', format: key => key.toString() },
-        { name: 'replace translation by Xs', format: key => key.replace(/[A-Z]/g, 'X').replace(/[a-z]/g, 'x') },
-        { name: 'show key like so |key|', format: key => `|${key}|` }
+        { name: 'show translation', format: (entry) => entry.value },
+        { name: 'replace translation by Xs', format: (entry) => entry.value.replace(/[A-Z]/g, 'X').replace(/[a-z]/g, 'x') },
+        { name: 'show key like so |key|', format: (entry) => `|${entry.key}|` }
     ]
 };

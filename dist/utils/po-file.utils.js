@@ -55,6 +55,34 @@ const getPoKeyValues = async function (fileName) {
         return formatLines(data);
     });
 };
+const generatePoFile = function (culture, entries, untranslatedFormater, translatedFormater) {
+    const filePrefix = `# ${culture} mock translation - for missing translation hunting
+#
+#
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2018-12-18 14:00+0000"
+"PO-Revision-Date: ${new Date().toISOString()}"
+"Language-Team: ${culture}"
+"MIME-Version: 1.0"
+"Content-Type: text/plain; charset=utf-8"
+"Content-Transfer-Encoding: 8bit"
+"Plural-Forms: nplurals=2; plural=(n>1);"`;
+    // format translation entries
+    const tradPoEntries = [];
+    entries.forEach(entry => {
+        if (entry.isTranslated) {
+            // known key
+            tradPoEntries.push(`msgid "${entry.key}"`, `msgstr "${translatedFormater(entry)}"`);
+        }
+        else {
+            // key to be hunted
+            tradPoEntries.push(`msgid "${entry.key}"`, `msgstr "${untranslatedFormater(entry)}"`);
+        }
+    });
+    return `${filePrefix}\n\n${tradPoEntries.join('\n')}`;
+};
 exports.default = {
-    getPoKeyValues
+    getPoKeyValues,
+    generatePoFile
 };

@@ -15,16 +15,16 @@ export const inquirerTexts = {
 
 export const inquirerChoices = {
     untranslatedLabelMarker: [
-        { name: '[untranslated label]', format: key => `[${key}]`},
-        { name: '{untranslated label}', format: key => `{${key}}`},
-        { name: '*untranslated label*', format: key => `*${key}*`},
-        { name: '<untranslated label>', format: key => `<${key}>`},
-        { name: '#untranslated label#', format: key => `#${key}#`}
+        { name: '[untranslated label]', format: (entry:PoEntry) => `[${entry.key}]`},
+        { name: '{untranslated label}', format: (entry:PoEntry) => `{${entry.key}}`},
+        { name: '*untranslated label*', format: (entry:PoEntry) => `*${entry.key}*`},
+        { name: '<untranslated label>', format: (entry:PoEntry) => `<${entry.key}>`},
+        { name: '#untranslated label#', format: (entry:PoEntry) => `#${entry.key}#`}
     ],
     translatedLabelAction: [
-        { name: 'show translation', format: key => key.toString()},
-        { name: 'replace translation by Xs', format: key => key.replace(/[A-Z]/g, 'X').replace(/[a-z]/g, 'x')},
-        { name: 'show key like so |key|', format: key => `|${key}|`}
+        { name: 'show translation', format: (entry:PoEntry) => entry.value},
+        { name: 'replace translation by Xs', format: (entry:PoEntry) => entry.value.replace(/[A-Z]/g, 'X').replace(/[a-z]/g, 'x')},
+        { name: 'show key like so |key|', format: (entry:PoEntry) => `|${entry.key}|`}
     ]
 }
 
@@ -32,6 +32,12 @@ export const inquirerChoices = {
 export interface UserInputs {
     drupalTranslationsExportFileName: string,
     drupalTranslationsOutputCulture: string,
-    untranslatedLabelMarker: (key:string)=>string,
-    translatedLabelAction: (key:string)=>string
+    untranslatedLabelMarker: (entry:PoEntry)=>string,
+    translatedLabelAction: (entry:PoEntry)=>string
+}
+
+export interface PoEntry {
+    key: string,
+    value: string,
+    isTranslated: boolean
 }

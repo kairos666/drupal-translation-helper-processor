@@ -1,11 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const fs = require('fs');
+const { promisify } = require('util');
+const writeFile = promisify(fs.writeFile);
+const readdir = promisify(fs.readdir);
+const unlink = promisify(fs.unlink);
 const figlet = require('figlet');
 const chalk = require('chalk');
 const inquirer = require('inquirer');
 const clui = require('clui');
 const config_1 = require("./config");
 const po_file_utils_1 = require("./utils/po-file.utils");
+/* MAIN */
 async function init() {
     // start screen
     console.log(chalk.green(figlet.textSync('Drupal v8')));
@@ -51,11 +57,30 @@ async function init() {
     console.log(chalk.red('need to rework with custom entry filtering'));
     const customKeysCount = customPoFileValues.length;
     const customTranslatedKeysCount = customPoFileValues.filter(entry => entry.isTranslated).length;
-    // analytics report - total file translation stat
+    /* ANALYTICS */
+    // total file translation stat
     console.log(clui.Gauge(totalTranslatedKeysCount, totalKeysCount, 20, 0.15, `${Math.round(100 * totalTranslatedKeysCount / totalKeysCount)}% translated (${totalTranslatedKeysCount}/${totalKeysCount})`));
-    // analytics report - custom entries file translation stat
+    // custom entries file translation stat
     console.log(clui.Gauge(customTranslatedKeysCount, customKeysCount, 20, 0.9, `${Math.round(100 * customTranslatedKeysCount / customKeysCount)}% translated (${customTranslatedKeysCount}/${customKeysCount})`));
+    /* OUTPUT */
+    // generate desired technical language file
+    const generatedFileString = po_file_utils_1.default.generatePoFile(answers.drupalTranslationsOutputCulture, poFileValues, answers.untranslatedLabelMarker, answers.translatedLabelAction);
+    const outputFileName = `drupal-hunting-language-${answers.drupalTranslationsOutputCulture}.po`;
+    await clearOutput();
+    // write file
+    writeFile(`output-files/${outputFileName}`, generatedFileString, 'utf8')
+        .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(outputFileName)} happy hunting!`))))
+        .catch(err => console.log(chalk.red(err)));
 }
 ;
+/* BASIC UTILS */
+// clear output folder
+async function clearOutput() {
+    const outputFiles = await readdir('output-files/');
+    // delete all promise
+    return Promise.all(outputFiles.map(outFile => {
+        return unlink(`output-files/${outFile}`);
+    }));
+}
 // launch
 init();
