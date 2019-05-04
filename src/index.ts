@@ -8,10 +8,9 @@ const figlet        = require('figlet');
 const chalk         = require('chalk');
 const inquirer      = require('inquirer');
 const clui          = require('clui');
-const readdirp      = require('readdirp');
-import { launchQuestions, labelHuntQuestions, inquirerTexts, inquirerChoices, UserInputs, PoEntry, FileMatches } from './config';
+import { launchQuestions, labelHuntQuestions, autoLabelHuntQuestions, inquirerTexts, inquirerChoices, UserInputs, PoEntry } from './config';
 import poUtils from './utils/po-file.utils';
-import fileSerachUtils from './utils/search-in-file.utils';
+import searchInFileUtils from './utils/search-in-file.utils';
 
 /* MAIN */
 async function init() {
@@ -67,35 +66,16 @@ async function labelHuntLanguageGenerator() {
 }
 
 async function fileCrawler() {
-    const pattern = /[ >]t\( *'(.+)' *\)/g; // will match & capture either ' t('<capture>')', '>t('<capture>')' with any number of spaces between parameter quotes 
-    const fileFilter = ['*.twig', '*.po', '*.php', '*.theme'];
-    // const directoryFilter = ['modules', 'custom', 'themes'];
-    const fileMatchesPromises = [];
-    const rootPath = path.resolve(process.cwd(), 'C://_data/B&B/sourcehub/bnb-bo/drupal/web/modules/custom');
+    const fileCrawlerAnswers = await inquirer.prompt(autoLabelHuntQuestions);
+    const { labelHuntRegExp, drupalDirectoriesToBeCrawled, drupalFilesToConsider } = fileCrawlerAnswers;
 
-    // find all files and extract matching regexp
-    readdirp(rootPath, { fileFilter, type: 'files', depth: 15, alwaysStat: false})
-        .on('data', entry => {
-            fileMatchesPromises.push(fileSerachUtils.searchInEntry(entry, pattern));
-        })
-        .on('end', () => { 
-            console.log(chalk.yellow(`${ fileMatchesPromises.length } files found`));
-
-            // wait for all files to be checked for matches
-            Promise.all(fileMatchesPromises)
-            .then(rawFileMatches => rawFileMatches.filter(fileMatch => (fileMatch as FileMatches).fileMatches.length > 0))
-            .then(fileMatches => { 
-                // final matches array
-                (fileMatches as FileMatches[]).map(fileMatch => {
-                    fileMatch.fileMatches.forEach(lineMatches => {
-                        console.log(lineMatches);
-                    });
-                }); 
-            })
-            .catch(err => { console.log(chalk.red('error processing files for matches'), err); });
-        })
-        .on('error', err => console.error('fatal error', err))
-        .on('warn', err => console.warn('non-fatal error', err));
+    // do stuff with results
+    const allMatches = await searchInFileUtils.autoHuntKeysInDirectories(drupalDirectoriesToBeCrawled, labelHuntRegExp, drupalFilesToConsider);
+    searchInFileUtils.analyzeMatches(allMatches);
+    // console.log('allMatches.length:' + allMatches.length);
+    // allMatches.forEach(fileMatchResult => {
+    //     console.log(fileMatchResult.basename, fileMatchResult.path, fileMatchResult.lineMatches));
+    // }); 
 }
 
 /* BASIC UTILS */

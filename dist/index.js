@@ -10,7 +10,6 @@ const figlet = require('figlet');
 const chalk = require('chalk');
 const inquirer = require('inquirer');
 const clui = require('clui');
-const readdirp = require('readdirp');
 const config_1 = require("./config");
 const po_file_utils_1 = require("./utils/po-file.utils");
 const search_in_file_utils_1 = require("./utils/search-in-file.utils");
@@ -60,33 +59,15 @@ async function labelHuntLanguageGenerator() {
         .catch(err => console.log(chalk.red(err)));
 }
 async function fileCrawler() {
-    const pattern = /[ >]t\( *'(.+)' *\)/g; // will match & capture either ' t('<capture>')', '>t('<capture>')' with any number of spaces between parameter quotes 
-    const fileFilter = ['*.twig', '*.po', '*.php', '*.theme'];
-    // const directoryFilter = ['modules', 'custom', 'themes'];
-    const fileMatchesPromises = [];
-    const rootPath = path.resolve(process.cwd(), 'C://_data/B&B/sourcehub/bnb-bo/drupal/web/modules/custom');
-    // find all files and extract matching regexp
-    readdirp(rootPath, { fileFilter, type: 'files', depth: 15, alwaysStat: false })
-        .on('data', entry => {
-        fileMatchesPromises.push(search_in_file_utils_1.default.searchInEntry(entry, pattern));
-    })
-        .on('end', () => {
-        console.log(chalk.yellow(`${fileMatchesPromises.length} files found`));
-        // wait for all files to be checked for matches
-        Promise.all(fileMatchesPromises)
-            .then(rawFileMatches => rawFileMatches.filter(fileMatch => fileMatch.fileMatches.length > 0))
-            .then(fileMatches => {
-            // final matches array
-            fileMatches.map(fileMatch => {
-                fileMatch.fileMatches.forEach(lineMatches => {
-                    console.log(lineMatches);
-                });
-            });
-        })
-            .catch(err => { console.log(chalk.red('error processing files for matches'), err); });
-    })
-        .on('error', err => console.error('fatal error', err))
-        .on('warn', err => console.warn('non-fatal error', err));
+    const fileCrawlerAnswers = await inquirer.prompt(config_1.autoLabelHuntQuestions);
+    const { labelHuntRegExp, drupalDirectoriesToBeCrawled, drupalFilesToConsider } = fileCrawlerAnswers;
+    // do stuff with results
+    const allMatches = await search_in_file_utils_1.default.autoHuntKeysInDirectories(drupalDirectoriesToBeCrawled, labelHuntRegExp, drupalFilesToConsider);
+    search_in_file_utils_1.default.analyzeMatches(allMatches);
+    // console.log('allMatches.length:' + allMatches.length);
+    // allMatches.forEach(fileMatchResult => {
+    //     console.log(fileMatchResult.basename, fileMatchResult.path, fileMatchResult.lineMatches));
+    // }); 
 }
 /* BASIC UTILS */
 // clear output folder

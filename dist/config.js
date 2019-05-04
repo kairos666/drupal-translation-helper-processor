@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const path = require('path');
 const chalk = require('chalk');
 exports.inquirerTexts = {
     translationExportPreRequisite: `1. Go to ${chalk.blue("<your-drupal-domain>/admin/config/regional/translate/export")} as an ${chalk.blue("administrator user")}
@@ -12,7 +13,10 @@ exports.inquirerTexts = {
     translationExportFileName: 'Enter the name of the file (ex: label-hunt-language.po):',
     drupalTranslationsOutputCulture: 'Enter the ISO 3166-2 country code for the file (ex: FR):',
     untranslatedLabelMarker: 'Choose the untranslated label markers:',
-    translatedLabelAction: 'Choose how to display the already translated labels'
+    translatedLabelAction: 'Choose how to display the already translated labels',
+    drupalDirectoriesToBeCrawled: 'Enter directories to be searched for labels (separate directories with "|")',
+    labelHuntRegExp: 'Enter regular expression for hunting labels',
+    drupalFilesToConsider: 'Enter file glob descriptors to be considered for label hunt (separate file types with "|")'
 };
 exports.inquirerChoices = {
     untranslatedLabelMarker: [
@@ -66,5 +70,45 @@ exports.labelHuntQuestions = [
         message: exports.inquirerTexts.translatedLabelAction,
         choices: exports.inquirerChoices.translatedLabelAction.map(choice => choice.name),
         filter: val => exports.inquirerChoices.translatedLabelAction.find(choice => (val == choice.name)).format
+    }
+];
+exports.autoLabelHuntQuestions = [
+    {
+        type: 'input',
+        name: 'labelHuntRegExp',
+        message: exports.inquirerTexts.labelHuntRegExp,
+        default: '[ >]t\\( *\'(.+)\' *\\)',
+        filter: val => new RegExp(val, 'g')
+    },
+    {
+        type: 'input',
+        name: 'drupalDirectoriesToBeCrawled',
+        message: exports.inquirerTexts.drupalDirectoriesToBeCrawled,
+        default: 'C://_data/B&B/sourcehub/bnb-bo/drupal/web/modules/custom|C://_data/B&B/sourcehub/bnb-bo/drupal/web/themes/custom',
+        filter: val => val.toString().split('|'),
+        validate: val => {
+            const hasAtLeastOneEntry = (val !== '');
+            const nonAbsoluteValues = val.toString().split('|')
+                .map(value => {
+                return {
+                    isValidPath: path.isAbsolute(value),
+                    path: value
+                };
+            })
+                .filter(item => !item.isValidPath);
+            const errorMsg = `invalid absolute paths to directories: ${nonAbsoluteValues.map(item => item.path).join(' | ')}`;
+            return (hasAtLeastOneEntry && nonAbsoluteValues.length == 0) ? true : errorMsg;
+        }
+    },
+    {
+        type: 'input',
+        name: 'drupalFilesToConsider',
+        message: exports.inquirerTexts.drupalFilesToConsider,
+        default: '*.twig|*.php|*.theme|*.yml',
+        filter: val => val.toString().split('|'),
+        validate: val => {
+            const hasAtLeastOneEntry = (val !== '');
+            return (hasAtLeastOneEntry) ? true : 'at least one file type to analyze is needed';
+        }
     }
 ];
