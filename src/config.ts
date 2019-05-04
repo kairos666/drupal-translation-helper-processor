@@ -2,6 +2,10 @@ import { pathToFileURL } from "url";
 const path          = require('path');
 const chalk         = require('chalk');
 
+export const generatedFiles = {
+    masterTranslationFileName: 'master-translations.json'
+}
+
 export const inquirerTexts = {
     translationExportPreRequisite: `1. Go to ${ chalk.blue("<your-drupal-domain>/admin/config/regional/translate/export") } as an ${ chalk.blue("administrator user") }
 2. Select a language (best is to use the language with missing translations you try to find of course)
@@ -144,4 +148,17 @@ export interface ReadDirPEntry {
 
 export interface FileMatch extends ReadDirPEntry {
     lineMatches: { matches: string[], line: string, lineNumber: number }[]
+}
+
+// entry for master-translations.json
+export interface i18nMasterEntry {
+    key: string, // english translation (default if no translation available in the targeted language)
+    uiKey: string, // global window.configuration.i18n property to retrieve label from front-end
+    occurrences: { file:string, path:string, lineNumber:number }[],
+    translations: {
+        fr?: string, // fr translation
+        it?: string, // it translation
+        es?: string, // es translation
+        de?: string // de translation
+    }
 }

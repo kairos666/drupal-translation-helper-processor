@@ -2,6 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const path = require('path');
 const chalk = require('chalk');
+exports.generatedFiles = {
+    masterTranslationFileName: 'master-translations.json'
+};
 exports.inquirerTexts = {
     translationExportPreRequisite: `1. Go to ${chalk.blue("<your-drupal-domain>/admin/config/regional/translate/export")} as an ${chalk.blue("administrator user")}
 2. Select a language (best is to use the language with missing translations you try to find of course)

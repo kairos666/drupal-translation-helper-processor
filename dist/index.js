@@ -1,7 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = require('fs');
-const path = require('path');
 const { promisify } = require('util');
 const writeFile = promisify(fs.writeFile);
 const readdir = promisify(fs.readdir);
@@ -61,13 +60,14 @@ async function labelHuntLanguageGenerator() {
 async function fileCrawler() {
     const fileCrawlerAnswers = await inquirer.prompt(config_1.autoLabelHuntQuestions);
     const { labelHuntRegExp, drupalDirectoriesToBeCrawled, drupalFilesToConsider } = fileCrawlerAnswers;
-    // do stuff with results
+    // analyze
     const allMatches = await search_in_file_utils_1.default.autoHuntKeysInDirectories(drupalDirectoriesToBeCrawled, labelHuntRegExp, drupalFilesToConsider);
     search_in_file_utils_1.default.analyzeMatches(allMatches);
-    // console.log('allMatches.length:' + allMatches.length);
-    // allMatches.forEach(fileMatchResult => {
-    //     console.log(fileMatchResult.basename, fileMatchResult.path, fileMatchResult.lineMatches));
-    // }); 
+    // generate master translations json file
+    const i18MasterEntries = search_in_file_utils_1.default.autoDetectToMasterFormatting(allMatches);
+    writeFile(`output-files/${config_1.generatedFiles.masterTranslationFileName}`, JSON.stringify(i18MasterEntries, null, 2), 'utf8')
+        .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(config_1.generatedFiles.masterTranslationFileName)}`))))
+        .catch(err => console.log(chalk.red(err)));
 }
 /* BASIC UTILS */
 // clear output folder

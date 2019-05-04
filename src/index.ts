@@ -1,5 +1,4 @@
 const fs            = require('fs');
-const path          = require('path');
 const { promisify } = require('util');
 const writeFile     = promisify(fs.writeFile);
 const readdir       = promisify(fs.readdir);
@@ -8,7 +7,7 @@ const figlet        = require('figlet');
 const chalk         = require('chalk');
 const inquirer      = require('inquirer');
 const clui          = require('clui');
-import { launchQuestions, labelHuntQuestions, autoLabelHuntQuestions, inquirerTexts, inquirerChoices, UserInputs, PoEntry } from './config';
+import { launchQuestions, labelHuntQuestions, autoLabelHuntQuestions, inquirerTexts, inquirerChoices, UserInputs, PoEntry, i18nMasterEntry, generatedFiles } from './config';
 import poUtils from './utils/po-file.utils';
 import searchInFileUtils from './utils/search-in-file.utils';
 
@@ -69,13 +68,15 @@ async function fileCrawler() {
     const fileCrawlerAnswers = await inquirer.prompt(autoLabelHuntQuestions);
     const { labelHuntRegExp, drupalDirectoriesToBeCrawled, drupalFilesToConsider } = fileCrawlerAnswers;
 
-    // do stuff with results
+    // analyze
     const allMatches = await searchInFileUtils.autoHuntKeysInDirectories(drupalDirectoriesToBeCrawled, labelHuntRegExp, drupalFilesToConsider);
     searchInFileUtils.analyzeMatches(allMatches);
-    // console.log('allMatches.length:' + allMatches.length);
-    // allMatches.forEach(fileMatchResult => {
-    //     console.log(fileMatchResult.basename, fileMatchResult.path, fileMatchResult.lineMatches));
-    // }); 
+
+    // generate master translations json file
+    const i18MasterEntries:i18nMasterEntry[] = searchInFileUtils.autoDetectToMasterFormatting(allMatches);
+    writeFile(`output-files/${ generatedFiles.masterTranslationFileName }`, JSON.stringify(i18MasterEntries, null, 2), 'utf8')
+        .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(generatedFiles.masterTranslationFileName)}`))))
+        .catch(err => console.log(chalk.red(err)));
 }
 
 /* BASIC UTILS */

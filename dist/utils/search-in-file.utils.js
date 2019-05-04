@@ -26,6 +26,8 @@ const searchInEntry = async function (entry, pattern) {
             patternMatches.shift();
             delete patternMatches.index;
             delete patternMatches.input;
+            if (patternMatches.length > 1)
+                console.log(patternMatches);
         }
         return {
             matches: patternMatches,
@@ -98,8 +100,51 @@ const analyzeMatches = function (src) {
     console.log('\n');
     console.log(clui.Gauge(uniqueDetectedKeys.length, allDetectedKeys.length, 40, allDetectedKeys.length, chalk.white(`${Math.round(100 * uniqueDetectedKeys.length / allDetectedKeys.length)}% unique keys in all detected key occurrences (${uniqueDetectedKeys.length}/${allDetectedKeys.length})`)));
 };
+const autoDetectToMasterFormatting = function (src) {
+    // explode matches, 1 entry per match
+    const explodedDetectedKeys = src
+        .reduce((accumulatorFileMatches, fileMatch) => {
+        // get all detected lines --> keys
+        const lines = fileMatch.lineMatches.reduce((accumulatorLineMatches, lineMatch) => {
+            accumulatorLineMatches.push(...lineMatch.matches.map(key => {
+                return {
+                    key,
+                    fileMatch,
+                    lineNumber: lineMatch.lineNumber
+                };
+            }));
+            return accumulatorLineMatches;
+        }, []);
+        accumulatorFileMatches.push(...lines);
+        return accumulatorFileMatches;
+    }, []);
+    // unique key entries
+    const uniqueDetectedKeys = [...new Set(explodedDetectedKeys.map(item => item.key))];
+    // sort keys alphabetically
+    const uniqueDetectedKeysSorted = uniqueDetectedKeys.sort();
+    // create master entries & register all occurrences
+    const masterEntries = uniqueDetectedKeysSorted.map(uniqueKey => {
+        // build occurences array
+        const occurrences = explodedDetectedKeys
+            .filter(item => (item.key == uniqueKey))
+            .map(occurrence => {
+            return {
+                file: occurrence.fileMatch.basename,
+                path: occurrence.fileMatch.path,
+                lineNumber: occurrence.lineNumber
+            };
+        });
+        return {
+            key: uniqueKey,
+            uiKey: null,
+            occurrences,
+            translations: {} // auto detect do not handle translations
+        };
+    });
+    return masterEntries;
+};
 exports.default = {
-    searchInEntry,
     autoHuntKeysInDirectories,
-    analyzeMatches
+    analyzeMatches,
+    autoDetectToMasterFormatting
 };
