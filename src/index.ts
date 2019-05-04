@@ -1,14 +1,17 @@
-const fs = require('fs');
+const fs            = require('fs');
+const path          = require('path');
 const { promisify } = require('util');
-const writeFile = promisify(fs.writeFile);
-const readdir = promisify(fs.readdir);
-const unlink = promisify(fs.unlink);
+const writeFile     = promisify(fs.writeFile);
+const readdir       = promisify(fs.readdir);
+const unlink        = promisify(fs.unlink);
 const figlet        = require('figlet');
 const chalk         = require('chalk');
 const inquirer      = require('inquirer');
 const clui          = require('clui');
-import { inquirerTexts, inquirerChoices, UserInputs, PoEntry } from './config';
+const readdirp      = require('readdirp');
+import { launchQuestions, labelHuntQuestions, inquirerTexts, inquirerChoices, UserInputs, PoEntry, FileMatches } from './config';
 import poUtils from './utils/po-file.utils';
+import fileSerachUtils from './utils/search-in-file.utils';
 
 /* MAIN */
 async function init() {
@@ -17,38 +20,18 @@ async function init() {
     console.log(chalk.green(figlet.textSync('translations helper processor')));
     console.log(chalk.white(inquirerTexts.translationExportPreRequisite));
 
-    // inquiry config
-    const questions:any[] = [
-        { 
-            type: 'input', 
-            name: 'drupalTranslationsExportFileName', 
-            message: inquirerTexts.translationExportFileName 
-        },
-        { 
-            type: 'input', 
-            name: 'drupalTranslationsOutputCulture', 
-            message: inquirerTexts.drupalTranslationsOutputCulture, 
-            filter: val => (val as string).toUpperCase(),
-            validate: text => { return ((text as string).length == 2) ? true : 'ISO 3166-2 is exactly 2 characters' }
-        },
-        { 
-            type: 'list', 
-            name: 'untranslatedLabelMarker', 
-            message: inquirerTexts.untranslatedLabelMarker, 
-            choices: inquirerChoices.untranslatedLabelMarker.map(choice => choice.name),
-            filter: val => inquirerChoices.untranslatedLabelMarker.find(choice => (val == choice.name)).format
-        },
-        { 
-            type: 'list', 
-            name: 'translatedLabelAction', 
-            message: inquirerTexts.translatedLabelAction, 
-            choices: inquirerChoices.translatedLabelAction.map(choice => choice.name),
-            filter: val => inquirerChoices.translatedLabelAction.find(choice => (val == choice.name)).format
-        }
-    ]
+    // choose main action
+    const mainActionAnswer:string = (await inquirer.prompt(launchQuestions)).mainAction;
+    switch(mainActionAnswer) {
+        case inquirerChoices.mainActions[0]: await labelHuntLanguageGenerator(); break;
+        case inquirerChoices.mainActions[1]: await fileCrawler(); break;
+    }
+};
 
+/* MAIN ACTIONS */
+async function labelHuntLanguageGenerator() {
     // process inquiry answers after command line questions have been answered
-    const answers:UserInputs = await inquirer.prompt(questions);
+    const answers:UserInputs = await inquirer.prompt(labelHuntQuestions);
     const drupalCorePoFileValues:PoEntry[] = await poUtils.getPoKeyValues('drupal-8.7.0-rc1.fr.po'); // official drupal v8 i18n FR translations (only used to get keys so whatever language will do)
     const drupalCoreTranslationKeys = new Set(drupalCorePoFileValues.map(entry => entry.key));
     const poFileValues:PoEntry[] = await poUtils.getPoKeyValues(answers.drupalTranslationsExportFileName);
@@ -57,7 +40,6 @@ async function init() {
     const totalKeysCount = poFileValues.length;
     const totalTranslatedKeysCount = poFileValues.filter(entry => entry.isTranslated).length;
     const customPoFileValues = poFileValues.filter(entry => !drupalCoreTranslationKeys.has(entry.key));
-    console.log(chalk.red('need to rework with custom entry filtering'));
     const customKeysCount = customPoFileValues.length;
     const customTranslatedKeysCount = customPoFileValues.filter(entry => entry.isTranslated).length;
 
@@ -82,7 +64,39 @@ async function init() {
     writeFile(`output-files/${ outputFileName }`, generatedFileString, 'utf8')
         .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(outputFileName)} happy hunting!`))))
         .catch(err => console.log(chalk.red(err)));
-};
+}
+
+async function fileCrawler() {
+    const pattern = /[ >]t\( *'(.+)' *\)/g; // will match & capture either ' t('<capture>')', '>t('<capture>')' with any number of spaces between parameter quotes 
+    const fileFilter = ['*.twig', '*.po', '*.php', '*.theme'];
+    // const directoryFilter = ['modules', 'custom', 'themes'];
+    const fileMatchesPromises = [];
+    const rootPath = path.resolve(process.cwd(), 'C://_data/B&B/sourcehub/bnb-bo/drupal/web/modules/custom');
+
+    // find all files and extract matching regexp
+    readdirp(rootPath, { fileFilter, type: 'files', depth: 15, alwaysStat: false})
+        .on('data', entry => {
+            fileMatchesPromises.push(fileSerachUtils.searchInEntry(entry, pattern));
+        })
+        .on('end', () => { 
+            console.log(chalk.yellow(`${ fileMatchesPromises.length } files found`));
+
+            // wait for all files to be checked for matches
+            Promise.all(fileMatchesPromises)
+            .then(rawFileMatches => rawFileMatches.filter(fileMatch => (fileMatch as FileMatches).fileMatches.length > 0))
+            .then(fileMatches => { 
+                // final matches array
+                (fileMatches as FileMatches[]).map(fileMatch => {
+                    fileMatch.fileMatches.forEach(lineMatches => {
+                        console.log(lineMatches);
+                    });
+                }); 
+            })
+            .catch(err => { console.log(chalk.red('error processing files for matches'), err); });
+        })
+        .on('error', err => console.error('fatal error', err))
+        .on('warn', err => console.warn('non-fatal error', err));
+}
 
 /* BASIC UTILS */
 // clear output folder
