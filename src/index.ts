@@ -21,8 +21,8 @@ async function init() {
     // choose main action
     const mainActionAnswer:string = (await inquirer.prompt(launchQuestions)).mainAction;
     switch(mainActionAnswer) {
-        case inquirerChoices.mainActions[0]: await labelHuntLanguageGenerator(); break;
-        case inquirerChoices.mainActions[1]: await fileCrawler(); break;
+        case inquirerChoices.mainActions[0]: await fileCrawler(); break;
+        case inquirerChoices.mainActions[1]: await labelHuntLanguageGenerator(); break;
     }
 };
 

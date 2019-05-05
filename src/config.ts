@@ -37,8 +37,8 @@ export const inquirerChoices = {
         { name: 'show key like so |key|', format: (entry:PoEntry) => `|${entry.key}|`}
     ],
     mainActions: [
-        'generate label hunting language', 
-        `auto search for ${ chalk.blue("t('<label key>')") } in folder`
+        `auto search for ${ chalk.blue("t('<label key>')") } in folder (generates ${ generatedFiles.masterTranslationFileName })`,
+        'generate label hunting language'
     ]
 }
 

@@ -35,8 +35,8 @@ exports.inquirerChoices = {
         { name: 'show key like so |key|', format: (entry) => `|${entry.key}|` }
     ],
     mainActions: [
-        'generate label hunting language',
-        `auto search for ${chalk.blue("t('<label key>')")} in folder`
+        `auto search for ${chalk.blue("t('<label key>')")} in folder (generates ${exports.generatedFiles.masterTranslationFileName})`,
+        'generate label hunting language'
     ]
 };
 exports.launchQuestions = [

@@ -22,10 +22,10 @@ async function init() {
     const mainActionAnswer = (await inquirer.prompt(config_1.launchQuestions)).mainAction;
     switch (mainActionAnswer) {
         case config_1.inquirerChoices.mainActions[0]:
-            await labelHuntLanguageGenerator();
+            await fileCrawler();
             break;
         case config_1.inquirerChoices.mainActions[1]:
-            await fileCrawler();
+            await labelHuntLanguageGenerator();
             break;
     }
 }
