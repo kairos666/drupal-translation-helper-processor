@@ -7,7 +7,7 @@ const figlet        = require('figlet');
 const chalk         = require('chalk');
 const inquirer      = require('inquirer');
 const clui          = require('clui');
-import { launchQuestions, labelHuntQuestions, autoLabelHuntQuestions, inquirerTexts, inquirerChoices, UserInputs, PoEntry, i18nMasterEntry, generatedFiles, mapLanguagePoFileQuestions } from './config';
+import { launchQuestions, labelHuntQuestions, autoLabelHuntQuestions, inquirerTexts, inquirerChoices, UserInputs, PoEntry, i18nMasterEntry, generatedFiles, mapLanguagePoFileQuestions, generateLanguagePoFileQuestions } from './config';
 import poUtils from './utils/po-file.utils';
 import searchInFileUtils from './utils/search-in-file.utils';
 
@@ -23,8 +23,9 @@ async function init() {
     switch(mainActionAnswer) {
         case inquirerChoices.mainActions[0]: await fileCrawler(); break;
         case inquirerChoices.mainActions[1]: await mapPoTranslationToMaster(); break;
-        case inquirerChoices.mainActions[2]: await labelHuntLanguageGenerator(); break;  
-        case inquirerChoices.mainActions[3]: break;
+        case inquirerChoices.mainActions[2]: await generatePoFileFromMaster(); break;  
+        case inquirerChoices.mainActions[3]: await labelHuntLanguageGenerator(); break;
+        case inquirerChoices.mainActions[4]: break;
     }
 };
 
@@ -52,7 +53,7 @@ async function labelHuntLanguageGenerator() {
 
     /* OUTPUT */
     // generate desired technical language file
-    const generatedFileString:string = poUtils.generatePoFile(
+    const generatedFileString:string = poUtils.generateMockPoFile(
         answers.drupalTranslationsOutputCulture,
         poFileValues,
         answers.untranslatedLabelMarker,
@@ -97,6 +98,18 @@ async function mapPoTranslationToMaster() {
     const updatedMaster:i18nMasterEntry[] = poUtils.mapPoKeysOntoMaster((poKeyValues as PoEntry[]), master, drupalTranslationsOutputCulture);
     writeFile(`output-files/${ generatedFiles.masterTranslationFileName }`, JSON.stringify(updatedMaster, null, 2), 'utf8')
         .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(generatedFiles.masterTranslationFileName)}`))))
+        .catch(err => console.log(chalk.red(err)));
+}
+
+async function generatePoFileFromMaster() {
+    const poGeneratorAnswers = await inquirer.prompt(generateLanguagePoFileQuestions);
+    const { drupalTranslationsPoFileName, drupalTranslationsOutputCulture } = poGeneratorAnswers;
+
+    // generate po file from master
+    const master = require(`../output-files/${ generatedFiles.masterTranslationFileName }`);
+    const generatedFileString = poUtils.generatePoFile(drupalTranslationsOutputCulture, master);
+    writeFile(`output-files/${ drupalTranslationsPoFileName }`, generatedFileString, 'utf8')
+        .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(drupalTranslationsPoFileName)}`))))
         .catch(err => console.log(chalk.red(err)));
 }
 

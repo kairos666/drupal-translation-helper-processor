@@ -28,9 +28,12 @@ async function init() {
             await mapPoTranslationToMaster();
             break;
         case config_1.inquirerChoices.mainActions[2]:
+            await generatePoFileFromMaster();
+            break;
+        case config_1.inquirerChoices.mainActions[3]:
             await labelHuntLanguageGenerator();
             break;
-        case config_1.inquirerChoices.mainActions[3]: break;
+        case config_1.inquirerChoices.mainActions[4]: break;
     }
 }
 ;
@@ -53,7 +56,7 @@ async function labelHuntLanguageGenerator() {
     console.log(clui.Gauge(customTranslatedKeysCount, customKeysCount, 20, 0.9, `${Math.round(100 * customTranslatedKeysCount / customKeysCount)}% translated (${customTranslatedKeysCount}/${customKeysCount})`));
     /* OUTPUT */
     // generate desired technical language file
-    const generatedFileString = po_file_utils_1.default.generatePoFile(answers.drupalTranslationsOutputCulture, poFileValues, answers.untranslatedLabelMarker, answers.translatedLabelAction);
+    const generatedFileString = po_file_utils_1.default.generateMockPoFile(answers.drupalTranslationsOutputCulture, poFileValues, answers.untranslatedLabelMarker, answers.translatedLabelAction);
     const outputFileName = `drupal-hunting-language-${answers.drupalTranslationsOutputCulture}.po`;
     await clearOutput();
     // write file
@@ -86,6 +89,16 @@ async function mapPoTranslationToMaster() {
     const updatedMaster = po_file_utils_1.default.mapPoKeysOntoMaster(poKeyValues, master, drupalTranslationsOutputCulture);
     writeFile(`output-files/${config_1.generatedFiles.masterTranslationFileName}`, JSON.stringify(updatedMaster, null, 2), 'utf8')
         .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(config_1.generatedFiles.masterTranslationFileName)}`))))
+        .catch(err => console.log(chalk.red(err)));
+}
+async function generatePoFileFromMaster() {
+    const poGeneratorAnswers = await inquirer.prompt(config_1.generateLanguagePoFileQuestions);
+    const { drupalTranslationsPoFileName, drupalTranslationsOutputCulture } = poGeneratorAnswers;
+    // generate po file from master
+    const master = require(`../output-files/${config_1.generatedFiles.masterTranslationFileName}`);
+    const generatedFileString = po_file_utils_1.default.generatePoFile(drupalTranslationsOutputCulture, master);
+    writeFile(`output-files/${drupalTranslationsPoFileName}`, generatedFileString, 'utf8')
+        .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(drupalTranslationsPoFileName)}`))))
         .catch(err => console.log(chalk.red(err)));
 }
 /* BASIC UTILS */

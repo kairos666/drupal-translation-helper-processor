@@ -20,7 +20,8 @@ exports.inquirerTexts = {
     drupalDirectoriesToBeCrawled: 'Enter directories to be searched for labels (separate directories with "|")',
     labelHuntRegExp: 'Enter regular expression for hunting labels',
     drupalFilesToConsider: 'Enter file glob descriptors to be considered for label hunt (separate file types with "|")',
-    drupalTranslationsPoFile: 'Enter absolute path to a PO file'
+    drupalTranslationsPoFile: 'Enter absolute path to a PO file',
+    drupalTranslationsPoFileName: 'Enter generated file name'
 };
 exports.inquirerChoices = {
     untranslatedLabelMarker: [
@@ -38,7 +39,7 @@ exports.inquirerChoices = {
     mainActions: [
         `auto search for ${chalk.blue("t('<label key>')")} in folder (generates ${exports.generatedFiles.masterTranslationFileName})`,
         'map translated languages to master',
-        { name: 'generate translation PO file to be imported in Drupal', disabled: 'in construction' },
+        'generate translation PO file to be imported in Drupal',
         { name: 'generate label hunting language', disabled: 'in construction' },
         { name: 'map uiKeys to master', disabled: 'in construction' }
     ]
@@ -136,6 +137,33 @@ exports.mapLanguagePoFileQuestions = [
             const nonAbsoluteValues = path.isAbsolute(val.toString());
             const errorMsg = `invalid absolute paths to PO file: ${val}`;
             return (nonEmptyEntry && nonAbsoluteValues) ? true : errorMsg;
+        }
+    }
+];
+exports.generateLanguagePoFileQuestions = [
+    {
+        type: 'input',
+        name: 'drupalTranslationsOutputCulture',
+        message: exports.inquirerTexts.drupalTranslationsOutputCulture,
+        filter: val => val.toUpperCase(),
+        validate: text => { return (text.length == 2) ? true : 'ISO 3166-2 is exactly 2 characters'; }
+    },
+    {
+        type: 'input',
+        name: 'drupalTranslationsPoFileName',
+        message: exports.inquirerTexts.drupalTranslationsPoFileName,
+        validate: val => {
+            const nonEmptyEntry = (val !== '');
+            const noSpaces = !val.toString().includes(' ');
+            const hasPoSuffix = val.toString().endsWith('.po');
+            let errorMsg = !nonEmptyEntry
+                ? `file name mandatory`
+                : !noSpaces
+                    ? `no spaces allowed in filename`
+                    : !hasPoSuffix
+                        ? `file name should respect format my-language-file.po`
+                        : 'wrong input';
+            return (nonEmptyEntry && hasPoSuffix && noSpaces) ? true : errorMsg;
         }
     }
 ];

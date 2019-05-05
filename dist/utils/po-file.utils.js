@@ -85,7 +85,42 @@ const mapPoKeysOntoMaster = function (src, master, culture) {
     console.log(`${(unusedTranslationCount > 0) ? chalk.yellow(unusedTranslationCount) : chalk.green(unusedTranslationCount)} unused translations in master (maybe need for clean up or some keys are missing in the master)`);
     return masterClone;
 };
-const generatePoFile = function (culture, entries, untranslatedFormater, translatedFormater) {
+const generatePoFile = function (culture, entries) {
+    const filePrefix = `# ${culture.toUpperCase()} translation - generated automatically with https://github.com/kairos666/drupal-translation-helper-processor
+#
+#
+msgid ""
+msgstr ""
+"POT-Creation-Date: 2018-12-18 14:00+0000"
+"PO-Revision-Date: ${new Date().toISOString()}"
+"Language-Team: ${culture.toUpperCase()}"
+"MIME-Version: 1.0"
+"Content-Type: text/plain; charset=utf-8"
+"Content-Transfer-Encoding: 8bit"
+"Plural-Forms: nplurals=2; plural=(n>1);"`;
+    // format translation entries
+    const knownTradPoEntries = [];
+    const unknownTradPoEntries = [];
+    entries.forEach(entry => {
+        const i18nValue = entry.translations[culture.toLowerCase()] || '';
+        if (i18nValue) {
+            // known translation
+            knownTradPoEntries.push(`msgid "${entry.key}"`, `msgstr "${i18nValue}"`);
+        }
+        else {
+            unknownTradPoEntries.push(`msgid "${entry.key}"`, `msgstr "${i18nValue}"`);
+        }
+    });
+    // report
+    // /!\ all po arrays are doubled
+    const knownTradCount = knownTradPoEntries.length / 2;
+    const unknownTradCount = unknownTradPoEntries.length / 2;
+    console.log('\n');
+    console.log(clui.Gauge(knownTradCount, entries.length, 40, entries.length, chalk.white(`${Math.round(100 * knownTradCount / entries.length)}% translated keys  in ${culture} language (${knownTradCount}/${entries.length})`)));
+    console.log(`${(unknownTradCount > 0) ? chalk.red(unknownTradCount) : chalk.green(unknownTradCount)} untranslated keys in ${culture} language`);
+    return `${filePrefix}\n\n${knownTradPoEntries.join('\n')}\n\n${unknownTradPoEntries.join('\n')}`;
+};
+const generateMockPoFile = function (culture, entries, untranslatedFormater, translatedFormater) {
     const filePrefix = `# ${culture} mock translation - for missing translation hunting
 #
 #
@@ -116,5 +151,6 @@ exports.default = {
     getPoKeyValues,
     analyzePoKeyValues,
     mapPoKeysOntoMaster,
-    generatePoFile
+    generatePoFile,
+    generateMockPoFile
 };
