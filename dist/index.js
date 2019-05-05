@@ -24,9 +24,11 @@ async function init() {
         case config_1.inquirerChoices.mainActions[0]:
             await fileCrawler();
             break;
-        case config_1.inquirerChoices.mainActions[1]:
+        case config_1.inquirerChoices.mainActions[1]: break;
+        case config_1.inquirerChoices.mainActions[2]:
             await labelHuntLanguageGenerator();
             break;
+        case config_1.inquirerChoices.mainActions[3]: break;
     }
 }
 ;

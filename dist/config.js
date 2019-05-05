@@ -6,11 +6,11 @@ exports.generatedFiles = {
     masterTranslationFileName: 'master-translations.json'
 };
 exports.inquirerTexts = {
-    translationExportPreRequisite: `1. Go to ${chalk.blue("<your-drupal-domain>/admin/config/regional/translate/export")} as an ${chalk.blue("administrator user")}
-2. Select a language (best is to use the language with missing translations you try to find of course)
-3. Ensure all export options are checked
-4. Export and copy the file into the ${chalk.blue("input-files")} folder
-5. Enter the name of the file ${chalk.blue("<my-export-file>.po")} in the command prompt below
+    translationExportPreRequisite: `Easily track custom translatable labels from your Drupal code.
+1. auto-detect keys in code (default language)
+2. easily map available translations from PO files (makes it easy to find missing translations)
+3. generate a fake language PO file that makes it easy to hunt for keys usage in UI
+4. custom B&B BO --> map uiKeys for use in UI    
 `,
     mainActionChoice: 'what action to process',
     translationExportFileName: 'Enter the name of the file (ex: label-hunt-language.po):',
@@ -36,7 +36,10 @@ exports.inquirerChoices = {
     ],
     mainActions: [
         `auto search for ${chalk.blue("t('<label key>')")} in folder (generates ${exports.generatedFiles.masterTranslationFileName})`,
-        'generate label hunting language'
+        { name: 'map translated languages to master', disabled: 'in construction' },
+        { name: 'generate translation PO file to be imported in Drupal', disabled: 'in construction' },
+        { name: 'generate label hunting language', disabled: 'in construction' },
+        { name: 'map uiKeys to master', disabled: 'in construction' }
     ]
 };
 exports.launchQuestions = [
