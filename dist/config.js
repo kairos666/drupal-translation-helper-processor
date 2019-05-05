@@ -19,7 +19,8 @@ exports.inquirerTexts = {
     translatedLabelAction: 'Choose how to display the already translated labels',
     drupalDirectoriesToBeCrawled: 'Enter directories to be searched for labels (separate directories with "|")',
     labelHuntRegExp: 'Enter regular expression for hunting labels',
-    drupalFilesToConsider: 'Enter file glob descriptors to be considered for label hunt (separate file types with "|")'
+    drupalFilesToConsider: 'Enter file glob descriptors to be considered for label hunt (separate file types with "|")',
+    drupalTranslationsPoFile: 'Enter absolute path to a PO file'
 };
 exports.inquirerChoices = {
     untranslatedLabelMarker: [
@@ -36,7 +37,7 @@ exports.inquirerChoices = {
     ],
     mainActions: [
         `auto search for ${chalk.blue("t('<label key>')")} in folder (generates ${exports.generatedFiles.masterTranslationFileName})`,
-        { name: 'map translated languages to master', disabled: 'in construction' },
+        'map translated languages to master',
         { name: 'generate translation PO file to be imported in Drupal', disabled: 'in construction' },
         { name: 'generate label hunting language', disabled: 'in construction' },
         { name: 'map uiKeys to master', disabled: 'in construction' }
@@ -115,6 +116,26 @@ exports.autoLabelHuntQuestions = [
         validate: val => {
             const hasAtLeastOneEntry = (val !== '');
             return (hasAtLeastOneEntry) ? true : 'at least one file type to analyze is needed';
+        }
+    }
+];
+exports.mapLanguagePoFileQuestions = [
+    {
+        type: 'input',
+        name: 'drupalTranslationsOutputCulture',
+        message: exports.inquirerTexts.drupalTranslationsOutputCulture,
+        filter: val => val.toUpperCase(),
+        validate: text => { return (text.length == 2) ? true : 'ISO 3166-2 is exactly 2 characters'; }
+    },
+    {
+        type: 'input',
+        name: 'drupalTranslationsPoFile',
+        message: exports.inquirerTexts.drupalTranslationsPoFile,
+        validate: val => {
+            const nonEmptyEntry = (val !== '');
+            const nonAbsoluteValues = path.isAbsolute(val.toString());
+            const errorMsg = `invalid absolute paths to PO file: ${val}`;
+            return (nonEmptyEntry && nonAbsoluteValues) ? true : errorMsg;
         }
     }
 ];

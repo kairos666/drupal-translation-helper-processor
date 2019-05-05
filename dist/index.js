@@ -24,7 +24,9 @@ async function init() {
         case config_1.inquirerChoices.mainActions[0]:
             await fileCrawler();
             break;
-        case config_1.inquirerChoices.mainActions[1]: break;
+        case config_1.inquirerChoices.mainActions[1]:
+            await mapPoTranslationToMaster();
+            break;
         case config_1.inquirerChoices.mainActions[2]:
             await labelHuntLanguageGenerator();
             break;
@@ -68,6 +70,21 @@ async function fileCrawler() {
     // generate master translations json file
     const i18MasterEntries = search_in_file_utils_1.default.autoDetectToMasterFormatting(allMatches);
     writeFile(`output-files/${config_1.generatedFiles.masterTranslationFileName}`, JSON.stringify(i18MasterEntries, null, 2), 'utf8')
+        .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(config_1.generatedFiles.masterTranslationFileName)}`))))
+        .catch(err => console.log(chalk.red(err)));
+}
+async function mapPoTranslationToMaster() {
+    const poMapperAnswers = await inquirer.prompt(config_1.mapLanguagePoFileQuestions);
+    const { drupalTranslationsPoFile, drupalTranslationsOutputCulture } = poMapperAnswers;
+    // read and parse po file
+    const poKeyValues = await po_file_utils_1.default.getPoKeyValues(drupalTranslationsPoFile)
+        .catch(err => console.warn('error when trying to load and parse po file', err));
+    // analyze po file
+    po_file_utils_1.default.analyzePoKeyValues(poKeyValues);
+    // merge with master
+    const master = require(`../output-files/${config_1.generatedFiles.masterTranslationFileName}`);
+    const updatedMaster = po_file_utils_1.default.mapPoKeysOntoMaster(poKeyValues, master, drupalTranslationsOutputCulture);
+    writeFile(`output-files/${config_1.generatedFiles.masterTranslationFileName}`, JSON.stringify(updatedMaster, null, 2), 'utf8')
         .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(config_1.generatedFiles.masterTranslationFileName)}`))))
         .catch(err => console.log(chalk.red(err)));
 }

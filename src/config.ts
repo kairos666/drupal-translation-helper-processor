@@ -20,7 +20,8 @@ export const inquirerTexts = {
     translatedLabelAction: 'Choose how to display the already translated labels',
     drupalDirectoriesToBeCrawled: 'Enter directories to be searched for labels (separate directories with "|")',
     labelHuntRegExp: 'Enter regular expression for hunting labels',
-    drupalFilesToConsider: 'Enter file glob descriptors to be considered for label hunt (separate file types with "|")'
+    drupalFilesToConsider: 'Enter file glob descriptors to be considered for label hunt (separate file types with "|")',
+    drupalTranslationsPoFile: 'Enter absolute path to a PO file'
 }
 
 export const inquirerChoices = {
@@ -38,7 +39,7 @@ export const inquirerChoices = {
     ],
     mainActions: [
         `auto search for ${ chalk.blue("t('<label key>')") } in folder (generates ${ generatedFiles.masterTranslationFileName })`,
-        { name:'map translated languages to master', disabled: 'in construction'},
+        'map translated languages to master',
         { name:'generate translation PO file to be imported in Drupal', disabled: 'in construction'},
         { name:'generate label hunting language', disabled: 'in construction'},
         { name:'map uiKeys to master', disabled: 'in construction'}
@@ -126,6 +127,28 @@ export const autoLabelHuntQuestions = [
         }
     }
 ]
+
+export const mapLanguagePoFileQuestions = [
+    { 
+        type: 'input', 
+        name: 'drupalTranslationsOutputCulture', 
+        message: inquirerTexts.drupalTranslationsOutputCulture, 
+        filter: val => (val as string).toUpperCase(),
+        validate: text => { return ((text as string).length == 2) ? true : 'ISO 3166-2 is exactly 2 characters' }
+    },
+    { 
+        type: 'input', 
+        name: 'drupalTranslationsPoFile', 
+        message: inquirerTexts.drupalTranslationsPoFile, 
+        validate: val => {
+            const nonEmptyEntry = (val !== '');
+            const nonAbsoluteValues = path.isAbsolute(val.toString());
+            const errorMsg:string = `invalid absolute paths to PO file: ${ val }`
+
+            return (nonEmptyEntry && nonAbsoluteValues) ? true : errorMsg
+        }
+    }
+];
 
 /* INTERFACES */
 export interface UserInputs {

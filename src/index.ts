@@ -7,7 +7,7 @@ const figlet        = require('figlet');
 const chalk         = require('chalk');
 const inquirer      = require('inquirer');
 const clui          = require('clui');
-import { launchQuestions, labelHuntQuestions, autoLabelHuntQuestions, inquirerTexts, inquirerChoices, UserInputs, PoEntry, i18nMasterEntry, generatedFiles } from './config';
+import { launchQuestions, labelHuntQuestions, autoLabelHuntQuestions, inquirerTexts, inquirerChoices, UserInputs, PoEntry, i18nMasterEntry, generatedFiles, mapLanguagePoFileQuestions } from './config';
 import poUtils from './utils/po-file.utils';
 import searchInFileUtils from './utils/search-in-file.utils';
 
@@ -22,7 +22,7 @@ async function init() {
     const mainActionAnswer:string = (await inquirer.prompt(launchQuestions)).mainAction;
     switch(mainActionAnswer) {
         case inquirerChoices.mainActions[0]: await fileCrawler(); break;
-        case inquirerChoices.mainActions[1]: break;
+        case inquirerChoices.mainActions[1]: await mapPoTranslationToMaster(); break;
         case inquirerChoices.mainActions[2]: await labelHuntLanguageGenerator(); break;  
         case inquirerChoices.mainActions[3]: break;
     }
@@ -77,6 +77,25 @@ async function fileCrawler() {
     // generate master translations json file
     const i18MasterEntries:i18nMasterEntry[] = searchInFileUtils.autoDetectToMasterFormatting(allMatches);
     writeFile(`output-files/${ generatedFiles.masterTranslationFileName }`, JSON.stringify(i18MasterEntries, null, 2), 'utf8')
+        .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(generatedFiles.masterTranslationFileName)}`))))
+        .catch(err => console.log(chalk.red(err)));
+}
+
+async function mapPoTranslationToMaster() {
+    const poMapperAnswers = await inquirer.prompt(mapLanguagePoFileQuestions);
+    const { drupalTranslationsPoFile, drupalTranslationsOutputCulture } = poMapperAnswers;
+
+    // read and parse po file
+    const poKeyValues = await poUtils.getPoKeyValues(drupalTranslationsPoFile)
+        .catch(err => console.warn('error when trying to load and parse po file', err));
+
+    // analyze po file
+    poUtils.analyzePoKeyValues((poKeyValues as PoEntry[]));
+    
+    // merge with master
+    const master = require(`../output-files/${ generatedFiles.masterTranslationFileName }`);
+    const updatedMaster:i18nMasterEntry[] = poUtils.mapPoKeysOntoMaster((poKeyValues as PoEntry[]), master, drupalTranslationsOutputCulture);
+    writeFile(`output-files/${ generatedFiles.masterTranslationFileName }`, JSON.stringify(updatedMaster, null, 2), 'utf8')
         .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(generatedFiles.masterTranslationFileName)}`))))
         .catch(err => console.log(chalk.red(err)));
 }
