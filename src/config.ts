@@ -85,7 +85,7 @@ export const autoLabelHuntQuestions = [
         type: 'input', 
         name: 'labelHuntRegExp',
         message: inquirerTexts.labelHuntRegExp,
-        default: '[ >]t\\( *\'(.+)\' *\\)',
+        default: '[ >]t\\( *\'(.+?)\' *\\)', // capture is lazy to avoid overreaching when multiple hits on a single line
         filter: val => new RegExp(val, 'g')
     },
     { 

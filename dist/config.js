@@ -80,7 +80,7 @@ exports.autoLabelHuntQuestions = [
         type: 'input',
         name: 'labelHuntRegExp',
         message: exports.inquirerTexts.labelHuntRegExp,
-        default: '[ >]t\\( *\'(.+)\' *\\)',
+        default: '[ >]t\\( *\'(.+?)\' *\\)',
         filter: val => new RegExp(val, 'g')
     },
     {
