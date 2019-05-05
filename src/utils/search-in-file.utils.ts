@@ -8,6 +8,20 @@ const clui          = require('clui');
 const { promisify } = require('util');
 const readFileAsync = promisify(fs.readFile);
 
+// take a string and rply with all captured groups
+const multiCapturePatternExec = function(pattern:RegExp, src:string):string[] {
+    const patternMatches = pattern.exec(src);
+
+    // if no match, leave early
+    if(patternMatches == null) return [];
+
+    patternMatches.shift();
+    delete patternMatches.index;
+    delete patternMatches.input;
+
+    return patternMatches;
+}
+
 const searchInEntry = async function(entry:ReadDirPEntry, pattern:RegExp):Promise<FileMatch> {
     let fileLines;
 
@@ -23,22 +37,14 @@ const searchInEntry = async function(entry:ReadDirPEntry, pattern:RegExp):Promis
 
     // match to pattern
     const lineMatches = fileLines.map((line, index) => {
-        const patternMatches = pattern.exec(line as string);
-        // remove first array element to keep only captured strings
-        if (Array.isArray(patternMatches) && patternMatches.length > 1) {
-            patternMatches.shift();
-            delete patternMatches.index;
-            delete patternMatches.input;
-
-            if(patternMatches.length > 1) console.log(patternMatches);
-        }
+        const patternMatches = multiCapturePatternExec(pattern, line);
 
         return {
             matches: patternMatches, 
             line: line, 
             lineNumber: index + 1
         }
-    }).filter(processedLine => (processedLine !== null && processedLine.matches !== null));
+    }).filter(processedLine => (processedLine !== null && processedLine.matches.length !== 0));
 
     return Object.assign({ lineMatches }, entry);
 }

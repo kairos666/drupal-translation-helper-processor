@@ -7,6 +7,17 @@ const readdirp = require('readdirp');
 const clui = require('clui');
 const { promisify } = require('util');
 const readFileAsync = promisify(fs.readFile);
+// take a string and rply with all captured groups
+const multiCapturePatternExec = function (pattern, src) {
+    const patternMatches = pattern.exec(src);
+    // if no match, leave early
+    if (patternMatches == null)
+        return [];
+    patternMatches.shift();
+    delete patternMatches.index;
+    delete patternMatches.input;
+    return patternMatches;
+};
 const searchInEntry = async function (entry, pattern) {
     let fileLines;
     // read file and separate it line by line
@@ -20,21 +31,13 @@ const searchInEntry = async function (entry, pattern) {
     }
     // match to pattern
     const lineMatches = fileLines.map((line, index) => {
-        const patternMatches = pattern.exec(line);
-        // remove first array element to keep only captured strings
-        if (Array.isArray(patternMatches) && patternMatches.length > 1) {
-            patternMatches.shift();
-            delete patternMatches.index;
-            delete patternMatches.input;
-            if (patternMatches.length > 1)
-                console.log(patternMatches);
-        }
+        const patternMatches = multiCapturePatternExec(pattern, line);
         return {
             matches: patternMatches,
             line: line,
             lineNumber: index + 1
         };
-    }).filter(processedLine => (processedLine !== null && processedLine.matches !== null));
+    }).filter(processedLine => (processedLine !== null && processedLine.matches.length !== 0));
     return Object.assign({ lineMatches }, entry);
 };
 const autoHuntKeysInDirectories = async function (directoryAbsolutePath, pattern, fileFilter) {
