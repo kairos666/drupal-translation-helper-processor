@@ -7,16 +7,19 @@ const readdirp = require('readdirp');
 const clui = require('clui');
 const { promisify } = require('util');
 const readFileAsync = promisify(fs.readFile);
-// take a string and rply with all captured groups
+// take a string and reply with all captured groups (allow multiple correct matches on a single line)
 const multiCapturePatternExec = function (pattern, src) {
-    const patternMatches = pattern.exec(src);
-    // if no match, leave early
-    if (patternMatches == null)
-        return [];
-    patternMatches.shift();
-    delete patternMatches.index;
-    delete patternMatches.input;
-    return patternMatches;
+    const allMatches = [];
+    let currentMatch;
+    while ((currentMatch = pattern.exec(src)) !== null) {
+        // This is necessary to avoid infinite loops with zero-width matches
+        if (currentMatch.index === pattern.lastIndex) {
+            pattern.lastIndex++;
+        }
+        // only register the captured group
+        allMatches.push(currentMatch[1]);
+    }
+    return allMatches;
 };
 const searchInEntry = async function (entry, pattern) {
     let fileLines;
