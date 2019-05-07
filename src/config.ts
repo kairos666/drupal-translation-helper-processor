@@ -119,7 +119,7 @@ export const autoLabelHuntQuestions = [
         type: 'input', 
         name: 'drupalFilesToConsider', 
         message: inquirerTexts.drupalFilesToConsider, 
-        default: '*.twig|*.php|*.theme|*.yml',
+        default: '*.twig|*.php|*.theme|*.yml|*.module',
         filter: val => val.toString().split('|'),
         validate: val => {
             const hasAtLeastOneEntry = (val !== '');
