@@ -7,6 +7,7 @@ const readdirp = require('readdirp');
 const clui = require('clui');
 const { promisify } = require('util');
 const readFileAsync = promisify(fs.readFile);
+const _ = require('lodash');
 // take a string and reply with all captured groups (allow multiple correct matches on a single line)
 const multiCapturePatternExec = function (pattern, src) {
     const allMatches = [];
@@ -149,8 +150,54 @@ const autoDetectToMasterFormatting = function (src) {
     });
     return masterEntries;
 };
+const extractUIKeysMappings = async function (filePath) {
+    // get file string -> extract uiKey map string -> format to lines array -> mapping array
+    return readFileAsync(filePath)
+        .then(rawData => /\/\/ <START UI KEY TRANSLATABLE MAPPING>([\s\S]*?)\/\/ <END UI KEY TRANSLATABLE MAPPING>/.exec(rawData.toString())[1])
+        .then(matchData => matchData.toString().split("\n"))
+        .then(linesData => {
+        return linesData.map(line => {
+            const lineMatch = /.*"(.+?)": ".*t\(\'(.+?)\'\)/.exec(line);
+            if (lineMatch !== null && lineMatch[1] && lineMatch[2]) {
+                return {
+                    uiKey: lineMatch[1],
+                    key: lineMatch[2]
+                };
+            }
+        });
+    })
+        .then(formatedDataArray => formatedDataArray.filter(item => (item !== null && item !== undefined)));
+};
+const mapUIKeysOntoMaster = function (src, master) {
+    const masterClone = _.cloneDeep(master);
+    let uiKeyFoundCounter = 0;
+    let uiKeyFoundWithoutMasterMatch = [];
+    src.forEach(uiKeyMap => {
+        const masterEntryMatch = masterClone.find(item => (item.key == uiKeyMap.key));
+        if (masterEntryMatch) {
+            // update ui key in master entry
+            masterEntryMatch.uiKey = uiKeyMap.uiKey;
+            uiKeyFoundCounter++;
+        }
+        else {
+            uiKeyFoundWithoutMasterMatch.push(uiKeyMap);
+        }
+    });
+    const masterEntryTotal = masterClone.length;
+    const masterEntryWithUIKeyTotal = masterClone.filter(item => !!item.uiKey).length;
+    // report
+    console.log('\n');
+    console.log(clui.Gauge(masterEntryWithUIKeyTotal, masterEntryTotal, 40, src.length, chalk.white(`${Math.round(100 * masterEntryWithUIKeyTotal / masterEntryTotal)}% keys have a uiKey mapped to (${masterEntryWithUIKeyTotal}/${masterEntryTotal})`)));
+    console.log(`${chalk.green(uiKeyFoundCounter)} uiKey were successfully mapped in master`);
+    console.log(`${(uiKeyFoundWithoutMasterMatch.length > 0) ? chalk.red(uiKeyFoundWithoutMasterMatch.length) : chalk.green(uiKeyFoundWithoutMasterMatch.length)} uiKey found couldn\'t be mapped onto a proper master key (probably new keys that weren't properly translated in PO files yet)`);
+    if (uiKeyFoundWithoutMasterMatch.length > 0)
+        uiKeyFoundWithoutMasterMatch.forEach(missingEntry => console.log(chalk.red(`no match in master for entry: uiKey = "${missingEntry.uiKey}" & key = "${missingEntry.key}"`)));
+    return masterClone;
+};
 exports.default = {
     autoHuntKeysInDirectories,
     analyzeMatches,
-    autoDetectToMasterFormatting
+    autoDetectToMasterFormatting,
+    extractUIKeysMappings,
+    mapUIKeysOntoMaster
 };

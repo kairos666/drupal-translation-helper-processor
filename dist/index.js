@@ -33,7 +33,9 @@ async function init() {
         case config_1.inquirerChoices.mainActions[3]:
             await labelHuntLanguageGenerator();
             break;
-        case config_1.inquirerChoices.mainActions[4]: break;
+        case config_1.inquirerChoices.mainActions[4]:
+            await mapUIKeysToMaster();
+            break;
     }
 }
 ;
@@ -99,6 +101,17 @@ async function generatePoFileFromMaster() {
     const generatedFileString = po_file_utils_1.default.generatePoFile(drupalTranslationsOutputCulture, master);
     writeFile(`output-files/${drupalTranslationsPoFileName}`, generatedFileString, 'utf8')
         .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(drupalTranslationsPoFileName)}`))))
+        .catch(err => console.log(chalk.red(err)));
+}
+async function mapUIKeysToMaster() {
+    const uiKeyMapperAnswers = await inquirer.prompt(config_1.mapUIKeysQuestions);
+    const { drupalUIKeysHolderFileName } = uiKeyMapperAnswers;
+    // analyze ui key holder file and map onto master accordingly
+    const master = require(`../output-files/${config_1.generatedFiles.masterTranslationFileName}`);
+    const analyzedUIKeyHolder = await search_in_file_utils_1.default.extractUIKeysMappings(drupalUIKeysHolderFileName);
+    const updatedMaster = search_in_file_utils_1.default.mapUIKeysOntoMaster(analyzedUIKeyHolder, master);
+    writeFile(`output-files/${config_1.generatedFiles.masterTranslationFileName}`, JSON.stringify(updatedMaster, null, 2), 'utf8')
+        .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(config_1.generatedFiles.masterTranslationFileName)}`))))
         .catch(err => console.log(chalk.red(err)));
 }
 /* BASIC UTILS */

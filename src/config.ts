@@ -22,7 +22,8 @@ export const inquirerTexts = {
     labelHuntRegExp: 'Enter regular expression for hunting labels',
     drupalFilesToConsider: 'Enter file glob descriptors to be considered for label hunt (separate file types with "|")',
     drupalTranslationsPoFile: 'Enter absolute path to a PO file',
-    drupalTranslationsPoFileName: 'Enter generated file name'
+    drupalTranslationsPoFileName: 'Enter generated file name',
+    drupalUIKeysHolderFileName: 'Enter file holding mapping between UI keys (for use in front-end) and translatable keys'
 }
 
 export const inquirerChoices = {
@@ -43,7 +44,7 @@ export const inquirerChoices = {
         'map translated languages to master',
         'generate translation PO file to be imported in Drupal',
         { name:'generate label hunting language', disabled: 'in construction'},
-        { name:'map uiKeys to master', disabled: 'in construction'}
+        'map uiKeys to master'
     ]
 }
 
@@ -176,6 +177,26 @@ export const generateLanguagePoFileQuestions = [
                 : 'wrong input'
 
             return (nonEmptyEntry && hasPoSuffix && noSpaces) ? true : errorMsg
+        }
+    }
+];
+
+export const mapUIKeysQuestions = [
+    { 
+        type: 'input', 
+        name: 'drupalUIKeysHolderFileName', 
+        message: inquirerTexts.drupalUIKeysHolderFileName,
+        default: 'C://_data/B&B/sourcehub/bnb-bo/drupal/web/themes/custom/bb_theme/bb_theme.theme',
+        validate: val => {
+            const nonEmptyEntry = (val !== '');
+            const noSpaces = !val.toString().includes(' ');
+            let errorMsg:string = !nonEmptyEntry
+                ? `file name mandatory`
+                : !noSpaces
+                ? `no spaces allowed in filename`
+                : 'wrong input'
+
+            return (nonEmptyEntry && noSpaces) ? true : errorMsg
         }
     }
 ];

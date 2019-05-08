@@ -7,7 +7,7 @@ const figlet        = require('figlet');
 const chalk         = require('chalk');
 const inquirer      = require('inquirer');
 const clui          = require('clui');
-import { launchQuestions, labelHuntQuestions, autoLabelHuntQuestions, inquirerTexts, inquirerChoices, UserInputs, PoEntry, i18nMasterEntry, generatedFiles, mapLanguagePoFileQuestions, generateLanguagePoFileQuestions } from './config';
+import { launchQuestions, labelHuntQuestions, autoLabelHuntQuestions, inquirerTexts, inquirerChoices, UserInputs, PoEntry, i18nMasterEntry, generatedFiles, mapLanguagePoFileQuestions, generateLanguagePoFileQuestions, mapUIKeysQuestions } from './config';
 import poUtils from './utils/po-file.utils';
 import searchInFileUtils from './utils/search-in-file.utils';
 
@@ -25,7 +25,7 @@ async function init() {
         case inquirerChoices.mainActions[1]: await mapPoTranslationToMaster(); break;
         case inquirerChoices.mainActions[2]: await generatePoFileFromMaster(); break;  
         case inquirerChoices.mainActions[3]: await labelHuntLanguageGenerator(); break;
-        case inquirerChoices.mainActions[4]: break;
+        case inquirerChoices.mainActions[4]: await mapUIKeysToMaster(); break;
     }
 };
 
@@ -110,6 +110,19 @@ async function generatePoFileFromMaster() {
     const generatedFileString = poUtils.generatePoFile(drupalTranslationsOutputCulture, master);
     writeFile(`output-files/${ drupalTranslationsPoFileName }`, generatedFileString, 'utf8')
         .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(drupalTranslationsPoFileName)}`))))
+        .catch(err => console.log(chalk.red(err)));
+}
+
+async function mapUIKeysToMaster() {
+    const uiKeyMapperAnswers = await inquirer.prompt(mapUIKeysQuestions);
+    const { drupalUIKeysHolderFileName } = uiKeyMapperAnswers;
+
+    // analyze ui key holder file and map onto master accordingly
+    const master = require(`../output-files/${ generatedFiles.masterTranslationFileName }`);
+    const analyzedUIKeyHolder = await searchInFileUtils.extractUIKeysMappings(drupalUIKeysHolderFileName);
+    const updatedMaster = searchInFileUtils.mapUIKeysOntoMaster(analyzedUIKeyHolder, master);
+    writeFile(`output-files/${ generatedFiles.masterTranslationFileName }`, JSON.stringify(updatedMaster, null, 2), 'utf8')
+        .then(() => console.log(chalk.bgGreen(chalk.black(`file output: ${chalk.yellow(generatedFiles.masterTranslationFileName)}`))))
         .catch(err => console.log(chalk.red(err)));
 }
 
